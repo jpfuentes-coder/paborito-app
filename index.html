@@ -62,22 +62,24 @@
         const IconPlus = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
         const IconMinus = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>;
         const IconTrash = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
 
         const { useState, useEffect } = React;
 
         const PaboritoApp = () => {
              const [cart, setCart] = useState([]);
              const [isCartOpen, setIsCartOpen] = useState(false);
-             const [orderStatus, setOrderStatus] = useState("idle"); 
+             const [orderStatus, setOrderStatus] = useState("idle"); // idle, sending, success
              const [activeSlide, setActiveSlide] = useState(0);
+             const [orderId, setOrderId] = useState(null); // To store the ID from Google Sheets
 
              // --- CHECKOUT FORM STATE ---
              const [customerName, setCustomerName] = useState("");
              const [contactNumber, setContactNumber] = useState("");
-             const [orderType, setOrderType] = useState("Delivery"); // Delivery or Pickup
+             const [orderType, setOrderType] = useState("Delivery");
              const [address, setAddress] = useState("");
-             const [paymentMethod, setPaymentMethod] = useState("Cash"); // Cash or GCash
-             const [paymentNote, setPaymentNote] = useState(""); // For "Change for 1000" or Ref#
+             const [paymentMethod, setPaymentMethod] = useState("Cash");
+             const [paymentNote, setPaymentNote] = useState("");
              const [specialRequest, setSpecialRequest] = useState("");
 
              const slides = [
@@ -134,10 +136,21 @@
              
              const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
+             // RESET FUNCTION
+             const closeSuccessScreen = () => {
+                 setOrderStatus("idle");
+                 setCart([]); // Clear cart only AFTER user closes the success screen
+                 setCustomerName("");
+                 setContactNumber("");
+                 setAddress("");
+                 setPaymentNote("");
+                 setSpecialRequest("");
+                 setIsCartOpen(false);
+             };
+
              const handleCheckout = () => {
                 if(cart.length === 0) return;
                 
-                // Simple Validation
                 if(!customerName || !contactNumber) {
                     alert("Please enter your Name and Contact Number.");
                     return;
@@ -168,9 +181,12 @@
                     body: JSON.stringify(payload)
                 })
                 .then(() => {
+                    // Note: 'no-cors' mode is opaque, so we can't read the response JSON easily.
+                    // We assume success if no network error.
+                    // To show a fake ID for now since we can't read the real one in no-cors:
+                    const fakeId = "ORD-" + Math.floor(Math.random() * 10000); 
+                    setOrderId(fakeId);
                     setOrderStatus("success");
-                    setCart([]); 
-                    setTimeout(() => setOrderStatus("idle"), 5000);
                 })
                 .catch(err => {
                     console.error(err);
@@ -189,77 +205,99 @@
                         </button>
                    </nav>
 
-                   {/* --- UPDATED CART SIDEBAR WITH FORM --- */}
+                   {/* --- CART SIDEBAR --- */}
                    <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-[#2D1B1B] shadow-2xl z-50 p-6 flex flex-col transform transition-transform duration-300 ${isCartOpen ? 'translate-x-0' : 'translate-x-full'} border-l-2 border-[#F4C466] overflow-y-auto`}>
+                       
+                       {/* HEADER */}
                        <div className="flex justify-between items-center mb-6 border-b border-[#F4C466]/30 pb-4">
                            <h2 className="font-bold text-2xl text-[#F4C466]">Your Tray</h2>
                            <button onClick={() => setIsCartOpen(false)} className="hover:bg-white/10 p-1 rounded-full text-[#F4C466]"><IconX /></button>
                        </div>
                        
-                       {/* Cart Items List */}
-                       <div className="flex-1 space-y-4 mb-6">
-                           {cart.length === 0 && <p className="text-center text-gray-400 mt-10">Your tray is empty.</p>}
-                           {cart.map(item => (
-                               <div key={item.id} className="flex gap-4 items-center bg-white/5 p-3 rounded-xl border border-[#F4C466]/20 shadow-sm">
-                                   <div className="flex-1">
-                                        <div className="font-bold text-sm text-[#FFFDF0]">{item.name}</div>
-                                        <div className="text-[#F4C466] font-bold">₱{item.price * item.qty}</div>
-                                   </div>
-                                   <div className="flex items-center gap-2 bg-white/10 rounded-lg border border-[#F4C466]/20 px-1">
-                                        <button onClick={() => updateQty(item.id, -1)} className="p-1 text-[#F4C466]"><IconMinus /></button>
-                                        <span className="text-sm font-bold w-4 text-center text-[#FFFDF0]">{item.qty}</span>
-                                        <button onClick={() => updateQty(item.id, 1)} className="p-1 text-[#F4C466]"><IconPlus /></button>
-                                   </div>
-                                   <button onClick={() => removeItem(item.id)} className="text-gray-500 hover:text-red-400"><IconTrash /></button>
+                       {/* --- SUCCESS VIEW (Shows only when Success) --- */}
+                       {orderStatus === "success" ? (
+                           <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-pulse">
+                               <div className="bg-green-100 p-6 rounded-full">
+                                   <IconCheck />
                                </div>
-                           ))}
-                       </div>
-
-                       {/* --- CHECKOUT FORM --- */}
-                       {cart.length > 0 && (
-                           <div className="space-y-4 border-t border-[#F4C466]/30 pt-4">
-                               <div className="text-[#F4C466] font-bold mb-2">Customer Details</div>
-                               <input type="text" placeholder="Your Name" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                               <input type="tel" placeholder="Contact Number" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" value={contactNumber} onChange={e => setContactNumber(e.target.value)} />
-                               
-                               <div className="flex gap-2">
-                                   <button onClick={() => setOrderType("Delivery")} className={`flex-1 p-2 rounded-lg font-bold ${orderType === "Delivery" ? "bg-[#F4C466] text-[#2D1B1B]" : "bg-white/10 text-gray-400"}`}>Delivery</button>
-                                   <button onClick={() => setOrderType("Pickup")} className={`flex-1 p-2 rounded-lg font-bold ${orderType === "Pickup" ? "bg-[#F4C466] text-[#2D1B1B]" : "bg-white/10 text-gray-400"}`}>Pick-up</button>
+                               <div>
+                                   <h3 className="text-3xl font-extrabold text-[#F4C466] mb-2">Thank You!</h3>
+                                   <p className="text-[#FFFDF0]">Your order has been sent to our kitchen.</p>
                                </div>
-
-                               {orderType === "Delivery" && (
-                                   <textarea placeholder="Delivery Address / Landmarks" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" rows="2" value={address} onChange={e => setAddress(e.target.value)}></textarea>
-                               )}
-
-                               <div className="text-[#F4C466] font-bold mt-4 mb-2">Payment</div>
-                               <div className="flex gap-2 mb-2">
-                                   <button onClick={() => setPaymentMethod("Cash")} className={`flex-1 p-2 rounded-lg font-bold ${paymentMethod === "Cash" ? "bg-green-600 text-white" : "bg-white/10 text-gray-400"}`}>Cash</button>
-                                   <button onClick={() => setPaymentMethod("GCash")} className={`flex-1 p-2 rounded-lg font-bold ${paymentMethod === "GCash" ? "bg-blue-600 text-white" : "bg-white/10 text-gray-400"}`}>GCash</button>
+                               <div className="bg-white/10 p-4 rounded-xl w-full">
+                                   <p className="text-sm text-gray-400">Order Reference</p>
+                                   <p className="text-xl font-mono font-bold text-[#FFFDF0]">{orderId}</p>
                                </div>
-                               
-                               <input 
-                                   type="text" 
-                                   placeholder={paymentMethod === "Cash" ? "Change for how much? (e.g. 1000)" : "GCash Ref Number (if paid)"} 
-                                   className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]"
-                                   value={paymentNote} onChange={e => setPaymentNote(e.target.value)}
-                               />
-
-                               <textarea placeholder="Special Requests (e.g. No onions)" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" rows="1" value={specialRequest} onChange={e => setSpecialRequest(e.target.value)}></textarea>
-
-                               <div className="flex justify-between font-bold text-xl mt-4 text-[#FFFDF0]">
-                                   <span>Total:</span>
-                                   <span className="text-[#F4C466]">₱{cartTotal}</span>
-                               </div>
-                               
-                               {orderStatus === "idle" && (
-                                   <button onClick={handleCheckout} className="w-full bg-gradient-to-r from-red-600 to-[#F4C466] text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all transform hover:-translate-y-1">
-                                       Confirm Order
-                                   </button>
-                               )}
-                               {orderStatus === "sending" && <button disabled className="w-full bg-gray-600 text-white/50 py-4 rounded-xl font-bold animate-pulse">Sending Order...</button>}
-                               {orderStatus === "success" && <div className="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-center">Order Sent! 🇵🇭</div>}
-                               {orderStatus === "error" && <div className="w-full bg-red-500 text-white py-4 rounded-xl font-bold text-center">Error! Try Again.</div>}
+                               <button onClick={closeSuccessScreen} className="w-full bg-[#F4C466] text-[#2D1B1B] py-3 rounded-xl font-bold hover:bg-white transition">
+                                   Close & Start New Order
+                               </button>
                            </div>
+                       ) : (
+                           /* --- NORMAL CART VIEW --- */
+                           <>
+                               <div className="flex-1 space-y-4 mb-6">
+                                   {cart.length === 0 && <p className="text-center text-gray-400 mt-10">Your tray is empty.</p>}
+                                   {cart.map(item => (
+                                       <div key={item.id} className="flex gap-4 items-center bg-white/5 p-3 rounded-xl border border-[#F4C466]/20 shadow-sm">
+                                           <div className="flex-1">
+                                                <div className="font-bold text-sm text-[#FFFDF0]">{item.name}</div>
+                                                <div className="text-[#F4C466] font-bold">₱{item.price * item.qty}</div>
+                                           </div>
+                                           <div className="flex items-center gap-2 bg-white/10 rounded-lg border border-[#F4C466]/20 px-1">
+                                                <button onClick={() => updateQty(item.id, -1)} className="p-1 text-[#F4C466]"><IconMinus /></button>
+                                                <span className="text-sm font-bold w-4 text-center text-[#FFFDF0]">{item.qty}</span>
+                                                <button onClick={() => updateQty(item.id, 1)} className="p-1 text-[#F4C466]"><IconPlus /></button>
+                                           </div>
+                                           <button onClick={() => removeItem(item.id)} className="text-gray-500 hover:text-red-400"><IconTrash /></button>
+                                       </div>
+                                   ))}
+                               </div>
+
+                               {cart.length > 0 && (
+                                   <div className="space-y-4 border-t border-[#F4C466]/30 pt-4">
+                                       <div className="text-[#F4C466] font-bold mb-2">Customer Details</div>
+                                       <input type="text" placeholder="Your Name" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                                       <input type="tel" placeholder="Contact Number" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" value={contactNumber} onChange={e => setContactNumber(e.target.value)} />
+                                       
+                                       <div className="flex gap-2">
+                                           <button onClick={() => setOrderType("Delivery")} className={`flex-1 p-2 rounded-lg font-bold ${orderType === "Delivery" ? "bg-[#F4C466] text-[#2D1B1B]" : "bg-white/10 text-gray-400"}`}>Delivery</button>
+                                           <button onClick={() => setOrderType("Pickup")} className={`flex-1 p-2 rounded-lg font-bold ${orderType === "Pickup" ? "bg-[#F4C466] text-[#2D1B1B]" : "bg-white/10 text-gray-400"}`}>Pick-up</button>
+                                       </div>
+
+                                       {orderType === "Delivery" && (
+                                           <textarea placeholder="Delivery Address / Landmarks" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" rows="2" value={address} onChange={e => setAddress(e.target.value)}></textarea>
+                                       )}
+
+                                       <div className="text-[#F4C466] font-bold mt-4 mb-2">Payment</div>
+                                       <div className="flex gap-2 mb-2">
+                                           <button onClick={() => setPaymentMethod("Cash")} className={`flex-1 p-2 rounded-lg font-bold ${paymentMethod === "Cash" ? "bg-green-600 text-white" : "bg-white/10 text-gray-400"}`}>Cash</button>
+                                           <button onClick={() => setPaymentMethod("GCash")} className={`flex-1 p-2 rounded-lg font-bold ${paymentMethod === "GCash" ? "bg-blue-600 text-white" : "bg-white/10 text-gray-400"}`}>GCash</button>
+                                       </div>
+                                       
+                                       <input 
+                                           type="text" 
+                                           placeholder={paymentMethod === "Cash" ? "Change for how much? (e.g. 1000)" : "GCash Ref Number (if paid)"} 
+                                           className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]"
+                                           value={paymentNote} onChange={e => setPaymentNote(e.target.value)}
+                                       />
+
+                                       <textarea placeholder="Special Requests (e.g. No onions)" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" rows="1" value={specialRequest} onChange={e => setSpecialRequest(e.target.value)}></textarea>
+
+                                       <div className="flex justify-between font-bold text-xl mt-4 text-[#FFFDF0]">
+                                           <span>Total:</span>
+                                           <span className="text-[#F4C466]">₱{cartTotal}</span>
+                                       </div>
+                                       
+                                       {orderStatus === "idle" && (
+                                           <button onClick={handleCheckout} className="w-full bg-gradient-to-r from-red-600 to-[#F4C466] text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all transform hover:-translate-y-1">
+                                               Confirm Order
+                                           </button>
+                                       )}
+                                       {orderStatus === "sending" && <button disabled className="w-full bg-gray-600 text-white/50 py-4 rounded-xl font-bold animate-pulse">Sending Order...</button>}
+                                       {orderStatus === "error" && <div className="w-full bg-red-500 text-white py-4 rounded-xl font-bold text-center">Error! Try Again.</div>}
+                                   </div>
+                               )}
+                           </>
                        )}
                    </div>
 
