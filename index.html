@@ -15,9 +15,9 @@
         
         body { 
             font-family: 'Fredoka', sans-serif; 
-            /* Background is handled by components now */
         }
         
+        /* THE GLOBAL BACKGROUND PATTERN */
         .custom-bg {
             background-image: url('./Paborito-Bg.jpg'); 
             background-size: cover;
@@ -27,23 +27,22 @@
         
         /* --- TWO-TONE THEME STYLES --- */
 
-        /* 1. LIGHT GLASS (For Top Section) */
-        .light-glass {
-            background: rgba(255, 253, 240, 0.9); /* Warm cream, more opaque */
-            backdrop-filter: blur(8px);
+        /* 1. TOP SECTION: LIGHT & BRIGHT (Original Vibe) */
+        .top-section-glass {
+            background: rgba(255, 253, 240, 0.6); /* Very sheer cream to let the BG pattern show */
+            backdrop-filter: blur(2px);
         }
 
-        /* 2. DARK MAROON GLASS (For Menu Section) */
-        .maroon-glass {
-            background: rgba(45, 10, 10, 0.92); /* Deep maroon, high opacity */
-            backdrop-filter: blur(8px);
+        /* 2. MENU SECTION: DARK MAROON (Premium Vibe) */
+        .maroon-section {
+            background: rgba(45, 10, 10, 0.96); /* Deep maroon, almost solid */
             border-top: 4px solid #F4C466; /* Gold separator line */
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.3); /* Shadow casting upwards */
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.5); /* Shadow casting upwards */
         }
 
-        /* Dark cards for the menu */
+        /* Dark cards for the menu items */
         .maroon-glass-card {
-            background: rgba(60, 20, 20, 0.7);
+            background: rgba(60, 20, 20, 0.6);
             backdrop-filter: blur(5px);
             transition: all 0.3s ease;
             border: 1px solid rgba(255, 223, 150, 0.1); 
@@ -51,17 +50,13 @@
         }
         
         .maroon-glass-card:hover {
-            background: rgba(80, 30, 30, 0.9);
+            background: rgba(90, 30, 30, 0.9);
             transform: translateY(-5px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             border-color: rgba(255, 223, 150, 0.4);
         }
 
-        /* Utility classes for text colors */
-        .text-cream { color: #FFFDF0; }
-        .text-gold { color: #F4C466; }
-        .text-maroon { color: #2D1B1B; }
-
+        /* Text Gradients */
         .text-gradient-gold {
             background: linear-gradient(to right, #F4C466, #FFFDF0);
             -webkit-background-clip: text;
@@ -176,8 +171,8 @@
              return (
                 <div className="min-h-screen font-sans custom-bg flex flex-col">
                    
-                   {/* Navbar - Reverted to Light Theme */}
-                   <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md shadow-sm py-3 px-4 flex justify-between items-center border-b border-red-100">
+                   {/* Navbar - LIGHT THEME (Matches Top Section) */}
+                   <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm py-3 px-4 flex justify-between items-center border-b border-red-100">
                         <span className="text-red-600 font-extrabold text-2xl tracking-tight">Paborito</span>
                         <button onClick={() => setIsCartOpen(!isCartOpen)} className="relative p-3 bg-red-50 rounded-full hover:bg-red-100 transition text-red-600">
                              <IconCart />
@@ -185,7 +180,7 @@
                         </button>
                    </nav>
 
-                   {/* Cart Sidebar - Kept Light for consistency with top section */}
+                   {/* Cart Sidebar - LIGHT THEME */}
                    <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-[#FFFDF0] shadow-2xl z-50 p-6 flex flex-col transform transition-transform duration-300 ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                        <div className="flex justify-between items-center mb-6 border-b border-red-200 pb-4">
                            <h2 className="font-bold text-2xl text-red-600">Your Tray</h2>
@@ -231,19 +226,19 @@
                        </div>
                    </div>
 
-                   {/* LANDING PAGE SECTION - Reverted to Light Theme & Larger Logo */}
-                   <header className="min-h-screen flex flex-col items-center justify-center text-center px-4 pt-24 pb-10 light-glass">
+                   {/* LANDING PAGE SECTION - REVERTED TO LIGHT/ORIGINAL BG */}
+                   <header className="min-h-screen flex flex-col items-center justify-center text-center px-4 pt-24 pb-10 top-section-glass">
                         
-                        {/* 1. CLICKABLE LOGO - MADE EVEN LARGER */}
-                        <a href="." className="w-96 md:w-[650px] mb-10 transition-transform duration-500 hover:scale-105 cursor-pointer block">
+                        {/* 1. CLICKABLE LOGO - MASSIVE SIZE */}
+                        <a href="." className="w-96 md:w-[600px] mb-10 transition-transform duration-500 hover:scale-110 cursor-pointer block">
                              <img src="./Paborito-Logo.png" alt="Paborito Logo" className="w-full drop-shadow-2xl" />
                         </a>
 
-                        {/* 2. Slideshow (Wide, Light Theme) */}
+                        {/* 2. Slideshow (Light Glass Style to match background) */}
                         <div className="relative w-full max-w-5xl aspect-[16/9] md:aspect-[21/9] bg-white/60 backdrop-blur-md rounded-3xl p-2 mb-12 overflow-hidden border border-white/40 shadow-xl">
                              <div className="w-full h-full relative overflow-hidden rounded-2xl flex items-center justify-center">
                                  <img src={slides[activeSlide].image} className="w-full h-full object-contain transition-opacity duration-1000 p-4 drop-shadow-lg" />
-                                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-white via-white/70 to-transparent pt-20 pb-8 px-8 text-left">
+                                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-white via-white/80 to-transparent pt-20 pb-8 px-8 text-left">
                                      <h3 className="text-3xl md:text-4xl font-extrabold text-red-600 drop-shadow-sm mb-2">{slides[activeSlide].title}</h3>
                                      <p className="text-lg font-medium text-gray-700 max-w-xl">{slides[activeSlide].desc}</p>
                                  </div>
@@ -256,8 +251,8 @@
                         </button>
                    </header>
 
-                   {/* MENU SECTION - Kept in Dark Maroon Theme */}
-                   <section id="menu" className="py-24 maroon-glass relative z-10">
+                   {/* MENU SECTION - DARK MAROON (The Contrast) */}
+                   <section id="menu" className="py-24 maroon-section relative z-10">
                         <div className="container mx-auto px-4">
                             <h2 className="text-5xl font-extrabold text-center mb-16 text-gradient-gold drop-shadow-sm">Our Menu</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -268,10 +263,10 @@
                                             <img src={item.image} className="w-full h-full object-contain transform group-hover:scale-110 transition-transform duration-500 p-2 drop-shadow-lg" />
                                         </div>
 
-                                        <h3 className="font-bold text-xl mb-2 leading-tight text-cream">{item.name}</h3>
+                                        <h3 className="font-bold text-xl mb-2 leading-tight text-[#FFFDF0]">{item.name}</h3>
                                         
                                         <div className="mt-auto flex justify-between items-center pt-4 border-t border-white/10">
-                                            <span className="text-2xl font-extrabold text-gold">₱{item.price}</span>
+                                            <span className="text-2xl font-extrabold text-[#F4C466]">₱{item.price}</span>
                                             <button onClick={() => addToCart(item)} className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-yellow-500 hover:scale-110 shadow-md shadow-red-900/50 transition-all">
                                                 <IconPlus />
                                             </button>
@@ -283,8 +278,8 @@
                    </section>
 
                    {/* Footer - Dark to match menu */}
-                   <footer className="bg-[#1A0F0F] text-cream py-12 text-center mt-auto border-t border-white/10 relative z-20">
-                        <h4 className="text-3xl font-extrabold text-gold mb-2 tracking-wide">Paborito</h4>
+                   <footer className="bg-[#1A0F0F] text-[#FFFDF0] py-12 text-center mt-auto border-t border-white/10 relative z-20">
+                        <h4 className="text-3xl font-extrabold text-[#F4C466] mb-2 tracking-wide">Paborito</h4>
                         <p className="text-white/50 text-sm">© 2025 Paborito Modern Filipino</p>
                    </footer>
                 </div>
