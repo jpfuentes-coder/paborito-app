@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Paborito Modern Filipino</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paborito Modern Filipino</title>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,13 +13,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
         
-        body { 
-            font-family: 'Fredoka', sans-serif; 
-            /* Fix for smooth scrolling on mobile */
-            scroll-behavior: smooth;
-        }
+        body { font-family: 'Fredoka', sans-serif; }
         
-        /* THE GLOBAL BACKGROUND PATTERN */
         .custom-bg {
             background-image: url('./Paborito-Bg.jpg'); 
             background-size: cover;
@@ -26,19 +22,12 @@
             background-attachment: fixed;
         }
 
-        /* 1. HEADER SECTION (Light & Bright) */
-        .top-section-glass {
-            background: rgba(255, 253, 240, 0.5); 
-        }
-
-        /* 2. MENU SECTION (Dark Maroon) */
+        .top-section-glass { background: rgba(255, 253, 240, 0.5); }
         .maroon-section {
             background: rgba(45, 10, 10, 0.96); 
             border-top: 4px solid #F4C466; 
             box-shadow: 0 -20px 50px rgba(0,0,0,0.5);
         }
-
-        /* Dark cards for the menu items */
         .maroon-glass-card {
             background: rgba(60, 20, 20, 0.6);
             backdrop-filter: blur(5px);
@@ -46,8 +35,6 @@
             border: 1px solid rgba(255, 223, 150, 0.1); 
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
-        
-        /* Only hover effect on desktop to prevent sticky hover on mobile */
         @media (min-width: 768px) {
             .maroon-glass-card:hover {
                 background: rgba(90, 30, 30, 0.9);
@@ -56,8 +43,6 @@
                 border-color: rgba(255, 223, 150, 0.4);
             }
         }
-
-        /* Text Gradients */
         .text-gradient-gold {
             background: linear-gradient(to right, #F4C466, #FFFDF0);
             -webkit-background-clip: text;
@@ -72,7 +57,6 @@
         // *** YOUR BACKEND URL ***
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6N9vYD2osrSjcFCNmh-O3ZYu7lkftQyOuJo5TuNvEQcfnw_8ZJ_zoeq_bgfPFzKBo/exec"; 
 
-        // --- ICONS ---
         const IconCart = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>;
         const IconX = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
         const IconPlus = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
@@ -87,7 +71,15 @@
              const [orderStatus, setOrderStatus] = useState("idle"); 
              const [activeSlide, setActiveSlide] = useState(0);
 
-             // ALL 12 ITEMS FOR SLIDESHOW
+             // --- CHECKOUT FORM STATE ---
+             const [customerName, setCustomerName] = useState("");
+             const [contactNumber, setContactNumber] = useState("");
+             const [orderType, setOrderType] = useState("Delivery"); // Delivery or Pickup
+             const [address, setAddress] = useState("");
+             const [paymentMethod, setPaymentMethod] = useState("Cash"); // Cash or GCash
+             const [paymentNote, setPaymentNote] = useState(""); // For "Change for 1000" or Ref#
+             const [specialRequest, setSpecialRequest] = useState("");
+
              const slides = [
                 { title: "Crispy Pata Perfection", desc: "Deep-fried pork knuckle with a crackling skin and tender meat.", image: "./Paboritong-Crispy-Pata.png" },
                 { title: "Sizzling Sisig Special", desc: "Kapampangan classic! Chopped pork face, onions, and chili.", image: "./Paboritong-Sisig.png" },
@@ -144,12 +136,29 @@
 
              const handleCheckout = () => {
                 if(cart.length === 0) return;
+                
+                // Simple Validation
+                if(!customerName || !contactNumber) {
+                    alert("Please enter your Name and Contact Number.");
+                    return;
+                }
+                if(orderType === "Delivery" && !address) {
+                    alert("Please enter your Delivery Address.");
+                    return;
+                }
+
                 setOrderStatus("sending");
 
                 const payload = {
-                    customerName: "Website Guest", 
                     cart: cart,
-                    total: cartTotal
+                    total: cartTotal,
+                    customerName,
+                    contactNumber,
+                    orderType,
+                    address: orderType === "Pickup" ? "PICKUP" : address,
+                    paymentMethod,
+                    paymentNote,
+                    specialRequest
                 };
 
                 fetch(GOOGLE_SCRIPT_URL, {
@@ -172,7 +181,6 @@
              return (
                 <div className="min-h-screen font-sans custom-bg flex flex-col overflow-x-hidden">
                    
-                   {/* Navbar - UPDATED: Dark Maroon background + Yellow Text */}
                    <nav className="fixed w-full z-50 bg-[#2D1B1B] shadow-lg py-3 px-4 flex justify-between items-center border-b-2 border-[#F4C466]">
                         <span className="text-[#F4C466] font-extrabold text-xl md:text-2xl tracking-tight">Paborito</span>
                         <button onClick={() => setIsCartOpen(!isCartOpen)} className="relative p-2 md:p-3 bg-[#F4C466]/10 rounded-full hover:bg-[#F4C466]/20 transition text-[#F4C466]">
@@ -181,94 +189,110 @@
                         </button>
                    </nav>
 
-                   {/* Cart Sidebar - Dark Theme to match Nav */}
-                   <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-[#2D1B1B] shadow-2xl z-50 p-6 flex flex-col transform transition-transform duration-300 ${isCartOpen ? 'translate-x-0' : 'translate-x-full'} border-l-2 border-[#F4C466]`}>
+                   {/* --- UPDATED CART SIDEBAR WITH FORM --- */}
+                   <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-[#2D1B1B] shadow-2xl z-50 p-6 flex flex-col transform transition-transform duration-300 ${isCartOpen ? 'translate-x-0' : 'translate-x-full'} border-l-2 border-[#F4C466] overflow-y-auto`}>
                        <div className="flex justify-between items-center mb-6 border-b border-[#F4C466]/30 pb-4">
                            <h2 className="font-bold text-2xl text-[#F4C466]">Your Tray</h2>
                            <button onClick={() => setIsCartOpen(false)} className="hover:bg-white/10 p-1 rounded-full text-[#F4C466]"><IconX /></button>
                        </div>
                        
-                       <div className="flex-1 overflow-y-auto space-y-4">
+                       {/* Cart Items List */}
+                       <div className="flex-1 space-y-4 mb-6">
                            {cart.length === 0 && <p className="text-center text-gray-400 mt-10">Your tray is empty.</p>}
                            {cart.map(item => (
                                <div key={item.id} className="flex gap-4 items-center bg-white/5 p-3 rounded-xl border border-[#F4C466]/20 shadow-sm">
-                                   <img src={item.image} className="w-16 h-16 rounded-lg object-contain bg-white/10" />
                                    <div className="flex-1">
                                         <div className="font-bold text-sm text-[#FFFDF0]">{item.name}</div>
                                         <div className="text-[#F4C466] font-bold">₱{item.price * item.qty}</div>
                                    </div>
-                                   <div className="flex flex-col gap-2 items-end">
-                                       <button onClick={() => removeItem(item.id)} className="text-gray-500 hover:text-red-400">
-                                            <IconTrash />
-                                       </button>
-                                       <div className="flex items-center gap-2 bg-white/10 rounded-lg border border-[#F4C466]/20 px-1">
-                                            <button onClick={() => updateQty(item.id, -1)} className="p-1 text-[#F4C466]"><IconMinus /></button>
-                                            <span className="text-sm font-bold w-4 text-center text-[#FFFDF0]">{item.qty}</span>
-                                            <button onClick={() => updateQty(item.id, 1)} className="p-1 text-[#F4C466]"><IconPlus /></button>
-                                       </div>
+                                   <div className="flex items-center gap-2 bg-white/10 rounded-lg border border-[#F4C466]/20 px-1">
+                                        <button onClick={() => updateQty(item.id, -1)} className="p-1 text-[#F4C466]"><IconMinus /></button>
+                                        <span className="text-sm font-bold w-4 text-center text-[#FFFDF0]">{item.qty}</span>
+                                        <button onClick={() => updateQty(item.id, 1)} className="p-1 text-[#F4C466]"><IconPlus /></button>
                                    </div>
+                                   <button onClick={() => removeItem(item.id)} className="text-gray-500 hover:text-red-400"><IconTrash /></button>
                                </div>
                            ))}
                        </div>
 
-                       <div className="mt-6 border-t border-[#F4C466]/30 pt-4">
-                           <div className="flex justify-between font-bold text-2xl mb-6 text-[#FFFDF0]">
-                               <span>Total:</span>
-                               <span className="text-[#F4C466]">₱{cartTotal}</span>
+                       {/* --- CHECKOUT FORM --- */}
+                       {cart.length > 0 && (
+                           <div className="space-y-4 border-t border-[#F4C466]/30 pt-4">
+                               <div className="text-[#F4C466] font-bold mb-2">Customer Details</div>
+                               <input type="text" placeholder="Your Name" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                               <input type="tel" placeholder="Contact Number" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" value={contactNumber} onChange={e => setContactNumber(e.target.value)} />
+                               
+                               <div className="flex gap-2">
+                                   <button onClick={() => setOrderType("Delivery")} className={`flex-1 p-2 rounded-lg font-bold ${orderType === "Delivery" ? "bg-[#F4C466] text-[#2D1B1B]" : "bg-white/10 text-gray-400"}`}>Delivery</button>
+                                   <button onClick={() => setOrderType("Pickup")} className={`flex-1 p-2 rounded-lg font-bold ${orderType === "Pickup" ? "bg-[#F4C466] text-[#2D1B1B]" : "bg-white/10 text-gray-400"}`}>Pick-up</button>
+                               </div>
+
+                               {orderType === "Delivery" && (
+                                   <textarea placeholder="Delivery Address / Landmarks" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" rows="2" value={address} onChange={e => setAddress(e.target.value)}></textarea>
+                               )}
+
+                               <div className="text-[#F4C466] font-bold mt-4 mb-2">Payment</div>
+                               <div className="flex gap-2 mb-2">
+                                   <button onClick={() => setPaymentMethod("Cash")} className={`flex-1 p-2 rounded-lg font-bold ${paymentMethod === "Cash" ? "bg-green-600 text-white" : "bg-white/10 text-gray-400"}`}>Cash</button>
+                                   <button onClick={() => setPaymentMethod("GCash")} className={`flex-1 p-2 rounded-lg font-bold ${paymentMethod === "GCash" ? "bg-blue-600 text-white" : "bg-white/10 text-gray-400"}`}>GCash</button>
+                               </div>
+                               
+                               <input 
+                                   type="text" 
+                                   placeholder={paymentMethod === "Cash" ? "Change for how much? (e.g. 1000)" : "GCash Ref Number (if paid)"} 
+                                   className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]"
+                                   value={paymentNote} onChange={e => setPaymentNote(e.target.value)}
+                               />
+
+                               <textarea placeholder="Special Requests (e.g. No onions)" className="w-full p-3 rounded-lg bg-white/10 border border-[#F4C466]/30 text-[#FFFDF0] focus:outline-none focus:border-[#F4C466]" rows="1" value={specialRequest} onChange={e => setSpecialRequest(e.target.value)}></textarea>
+
+                               <div className="flex justify-between font-bold text-xl mt-4 text-[#FFFDF0]">
+                                   <span>Total:</span>
+                                   <span className="text-[#F4C466]">₱{cartTotal}</span>
+                               </div>
+                               
+                               {orderStatus === "idle" && (
+                                   <button onClick={handleCheckout} className="w-full bg-gradient-to-r from-red-600 to-[#F4C466] text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all transform hover:-translate-y-1">
+                                       Confirm Order
+                                   </button>
+                               )}
+                               {orderStatus === "sending" && <button disabled className="w-full bg-gray-600 text-white/50 py-4 rounded-xl font-bold animate-pulse">Sending Order...</button>}
+                               {orderStatus === "success" && <div className="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-center">Order Sent! 🇵🇭</div>}
+                               {orderStatus === "error" && <div className="w-full bg-red-500 text-white py-4 rounded-xl font-bold text-center">Error! Try Again.</div>}
                            </div>
-                           
-                           {orderStatus === "idle" && (
-                               <button onClick={handleCheckout} className="w-full bg-gradient-to-r from-red-600 to-[#F4C466] text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all transform hover:-translate-y-1">
-                                   Confirm Order
-                               </button>
-                           )}
-                           {orderStatus === "sending" && <button disabled className="w-full bg-gray-600 text-white/50 py-4 rounded-xl font-bold animate-pulse">Sending Order...</button>}
-                           {orderStatus === "success" && <div className="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-center">Order Received! 🇵🇭</div>}
-                       </div>
+                       )}
                    </div>
 
-                   {/* LANDING PAGE SECTION - Responsive Logo & Slideshow */}
+                   {/* LANDING PAGE */}
                    <header className="min-h-screen flex flex-col items-center justify-center text-center px-4 pt-24 pb-10 top-section-glass">
-                        
-                        {/* 1. CLICKABLE LOGO - Responsive Width! */}
                         <a href="." className="w-64 md:w-[600px] mb-8 md:mb-10 transition-transform duration-500 hover:scale-110 cursor-pointer block">
                              <img src="./Paborito-Logo.png" alt="Paborito Logo" className="w-full drop-shadow-2xl" />
                         </a>
-
-                        {/* 2. Slideshow (Square on Mobile, Wide on Desktop) */}
                         <div className="relative w-full max-w-5xl aspect-square md:aspect-[21/9] bg-[#2D1B1B]/90 backdrop-blur-md rounded-3xl p-2 mb-10 overflow-hidden border border-[#F4C466]/50 shadow-2xl">
                              <div className="w-full h-full relative overflow-hidden rounded-2xl flex items-center justify-center">
-                                 {/* Image: Scaled up to fill the space nicely */}
                                  <img src={slides[activeSlide].image} className="w-full h-full object-contain transition-opacity duration-1000 p-0 drop-shadow-xl scale-110" />
-                                 
-                                 {/* Text Overlay: Adjusts based on screen size */}
                                  <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#2D1B1B] via-[#2D1B1B]/80 to-transparent pt-20 pb-6 px-6 md:pb-8 md:px-8 text-left">
                                      <h3 className="text-2xl md:text-4xl font-extrabold text-[#F4C466] drop-shadow-sm mb-1 md:mb-2">{slides[activeSlide].title}</h3>
                                      <p className="text-sm md:text-lg font-medium text-[#FFFDF0] max-w-xl line-clamp-2 md:line-clamp-none">{slides[activeSlide].desc}</p>
                                  </div>
                              </div>
                         </div>
-
-                        {/* 3. Order Button */}
                         <button onClick={() => document.getElementById('menu').scrollIntoView({ behavior: 'smooth' })} className="px-10 py-4 md:px-12 md:py-5 bg-gradient-to-r from-red-600 to-orange-500 text-white font-extrabold text-lg md:text-xl rounded-full shadow-lg shadow-red-200 hover:shadow-red-400 hover:scale-105 transition-all transform border-2 border-white/50 tracking-wider mb-10">
                              ORDER NOW
                         </button>
                    </header>
 
-                   {/* MENU SECTION - DARK MAROON (The Contrast) */}
+                   {/* MENU SECTION */}
                    <section id="menu" className="py-12 md:py-24 maroon-section relative z-10">
                         <div className="container mx-auto px-4">
                             <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-10 md:mb-16 text-gradient-gold drop-shadow-sm">Our Menu</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                                 {menuItems.map(item => (
                                     <div key={item.id} className="maroon-glass-card rounded-3xl p-5 flex flex-col relative group">
-                                        
                                         <div className="relative h-56 md:h-64 overflow-hidden rounded-2xl mb-4 flex items-center justify-center bg-[#2D1B1B]/30">
                                             <img src={item.image} className="w-full h-full object-contain transform group-hover:scale-110 transition-transform duration-500 p-2 drop-shadow-lg" />
                                         </div>
-
                                         <h3 className="font-bold text-lg md:text-xl mb-2 leading-tight text-[#FFFDF0]">{item.name}</h3>
-                                        
                                         <div className="mt-auto flex justify-between items-center pt-4 border-t border-white/10">
                                             <span className="text-xl md:text-2xl font-extrabold text-[#F4C466]">₱{item.price}</span>
                                             <button onClick={() => addToCart(item)} className="w-10 h-10 md:w-12 md:h-12 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-yellow-500 hover:scale-110 shadow-md shadow-red-900/50 transition-all">
@@ -281,7 +305,6 @@
                         </div>
                    </section>
 
-                   {/* Footer - Dark to match menu */}
                    <footer className="bg-[#1A0F0F] text-[#FFFDF0] py-8 md:py-12 text-center mt-auto border-t border-white/10 relative z-20">
                         <h4 className="text-2xl md:text-3xl font-extrabold text-[#F4C466] mb-2 tracking-wide">Paborito</h4>
                         <p className="text-white/50 text-xs md:text-sm">© 2025 Paborito Modern Filipino</p>
