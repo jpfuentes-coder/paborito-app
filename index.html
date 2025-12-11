@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paborito Modern Filipino</title>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Custom animation for the floating blobs */
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .font-comic { font-family: "Comic Sans MS", "Chalkboard SE", sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // *** YOUR BACKEND CONNECTION ***
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6N9vYD2osrSjcFCNmh-O3ZYu7lkftQyOuJo5TuNvEQcfnw_8ZJ_zoeq_bgfPFzKBo/exec"; 
+        
+        const { useState, useEffect } = React;
+        const { ShoppingCart, Star, MapPin, Clock, ArrowRight, Menu, X, Plus, Minus } = lucide;
+
+        const PaboritoApp = () => {
+             const [cart, setCart] = useState([]);
+             const [isCartOpen, setIsCartOpen] = useState(false);
+             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+             const [orderStatus, setOrderStatus] = useState("idle"); // idle, sending, success, error
+             const [activeSlide, setActiveSlide] = useState(0);
+
+             // Slideshow Data
+             const slides = [
+                { title: "Crispy Pata Perfection", desc: "Deep-fried to golden perfection.", image: "https://images.unsplash.com/photo-1651588636402-2877174dbd71?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" },
+                { title: "Sizzling Sisig Special", desc: "The ultimate Kapampangan comfort food.", image: "https://images.unsplash.com/photo-1616641836171-81d3f6d7a42b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" },
+                { title: "Classic Adobo", desc: "Marinated in vinegar, soy sauce, garlic.", image: "https://images.unsplash.com/photo-1549203538-956295eb9c0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }
+             ];
+
+             // Menu Data
+             const menuItems = [
+                { id: 1, name: "Paboritong Crispy Pata", price: 590, category: "Main", image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=300&q=80" },
+                { id: 2, name: "Crispy Fried Chicken (7pcs)", price: 480, category: "Main", image: "https://images.unsplash.com/photo-1562967963-edec92d1293e?auto=format&fit=crop&w=300&q=80" },
+                { id: 3, name: "Paboritong Bistek", price: 200, category: "Main", image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=300&q=80" },
+                { id: 4, name: "Paboritong Adobo", price: 180, category: "Main", image: "https://images.unsplash.com/photo-1549203538-956295eb9c0d?auto=format&fit=crop&w=300&q=80" },
+                { id: 5, name: "Paboritong Sisig", price: 210, category: "Main", image: "https://images.unsplash.com/photo-1616641836171-81d3f6d7a42b?auto=format&fit=crop&w=300&q=80" },
+                { id: 6, name: "Paboritong Kare Kare", price: 250, category: "Main", image: "https://images.unsplash.com/photo-1626577823521-d40b2e3f54d6?auto=format&fit=crop&w=300&q=80" },
+                { id: 7, name: "Paboritong Bulalo", price: 250, category: "Main", image: "https://images.unsplash.com/photo-1601666495147-3e147b172a6a?auto=format&fit=crop&w=300&q=80" },
+                { id: 8, name: "Paboritong Sinigang", price: 180, category: "Main", image: "https://images.unsplash.com/photo-1604544203292-0b89a8c17b8f?auto=format&fit=crop&w=300&q=80" },
+                { id: 9, name: "Paboritong Rice", price: 20, category: "Rice", image: "https://images.unsplash.com/photo-1596560548464-f010549b84d7?auto=format&fit=crop&w=300&q=80" },
+                { id: 10, name: "Paboritong Adobo Rice", price: 35, category: "Rice", image: "https://images.unsplash.com/photo-1626804475297-411d863b67ab?auto=format&fit=crop&w=300&q=80" },
+                { id: 11, name: "Paboritong Fried Rice", price: 25, category: "Rice", image: "https://images.unsplash.com/photo-1603133872878-684f208fb74b?auto=format&fit=crop&w=300&q=80" },
+                { id: 12, name: "Paboritong Egg Rice", price: 25, category: "Rice", image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80" },
+             ];
+
+             // Auto Rotate Slides
+             useEffect(() => {
+                const interval = setInterval(() => setActiveSlide(prev => (prev + 1) % slides.length), 4000);
+                return () => clearInterval(interval);
+             }, []);
+
+             const addToCart = (item) => {
+                setCart(prev => {
+                  const existing = prev.find(i => i.id === item.id);
+                  if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+                  return [...prev, { ...item, qty: 1 }];
+                });
+                setIsCartOpen(true);
+             };
+
+             const updateQty = (id, delta) => {
+                setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(0, i.qty + delta) } : i).filter(i => i.qty > 0));
+             };
+             
+             const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+             // --- THE CHECKOUT FUNCTION ---
+             const handleCheckout = () => {
+                if(cart.length === 0) return;
+                setOrderStatus("sending");
+
+                const payload = {
+                    customerName: "Website Guest", 
+                    cart: cart,
+                    total: cartTotal
+                };
+
+                // Send data to Google Sheet
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors", // Important for Google Apps Script
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                })
+                .then(() => {
+                    setOrderStatus("success");
+                    setCart([]); 
+                    setTimeout(() => setOrderStatus("idle"), 5000);
+                })
+                .catch(err => {
+                    console.error(err);
+                    setOrderStatus("error");
+                });
+             };
+
+             return (
+                <div className="min-h-screen font-sans text-gray-800 bg-[#FFF8E7]">
+                   
+                   {/* Navbar */}
+                   <nav className="fixed w-full z-50 bg-white/95 backdrop-blur shadow-md py-2 px-4 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                             <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow">Logo</div>
+                             <span className="text-red-600 font-extrabold text-xl font-comic">Paborito</span>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <a href="#menu" className="hidden md:block font-semibold hover:text-red-600">Menu</a>
+                            <button onClick={() => setIsCartOpen(!isCartOpen)} className="relative p-2 bg-red-50 rounded-full hover:bg-red-100 transition">
+                                 <ShoppingCart className="w-6 h-6 text-red-600" />
+                                 {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full animate-bounce">{cart.length}</span>}
+                            </button>
+                        </div>
+                   </nav>
+
+                   {/* Cart Sidebar */}
+                   <div className={`fixed inset-y-0 right-0 w-full md:w-96 bg-white shadow-2xl z-50 p-6 flex flex-col transform transition-transform duration-300 ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                       <div className="flex justify-between items-center mb-6 border-b pb-4">
+                           <h2 className="font-bold text-2xl text-red-600 font-comic">Your Tray</h2>
+                           <button onClick={() => setIsCartOpen(false)}><X /></button>
+                       </div>
+                       
+                       <div className="flex-1 overflow-y-auto space-y-4">
+                           {cart.length === 0 && <p className="text-center text-gray-400 mt-10">Your tray is empty.</p>}
+                           {cart.map(item => (
+                               <div key={item.id} className="flex gap-4 items-center bg-gray-50 p-3 rounded-xl">
+                                   <img src={item.image} className="w-16 h-16 rounded-lg object-cover" />
+                                   <div className="flex-1">
+                                        <div className="font-bold text-sm">{item.name}</div>
+                                        <div className="text-red-600 font-bold">₱{item.price * item.qty}</div>
+                                   </div>
+                                   <div className="flex items-center gap-2 bg-white rounded-lg border px-1">
+                                        <button onClick={() => updateQty(item.id, -1)} className="p-1"><Minus size={14}/></button>
+                                        <span className="text-sm font-bold w-4 text-center">{item.qty}</span>
+                                        <button onClick={() => updateQty(item.id, 1)} className="p-1"><Plus size={14}/></button>
+                                   </div>
+                               </div>
+                           ))}
+                       </div>
+
+                       <div className="mt-6 border-t pt-4">
+                           <div className="flex justify-between font-bold text-2xl mb-6">
+                               <span>Total:</span>
+                               <span className="text-red-600">₱{cartTotal}</span>
+                           </div>
+                           
+                           {orderStatus === "idle" && (
+                               <button onClick={handleCheckout} className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 shadow-lg shadow-red-200 transition-all transform hover:-translate-y-1">
+                                   Confirm Order
+                               </button>
+                           )}
+                           {orderStatus === "sending" && <button disabled className="w-full bg-gray-400 text-white py-4 rounded-xl font-bold animate-pulse">Sending Order...</button>}
+                           {orderStatus === "success" && <div className="w-full bg-green-500 text-white py-4 rounded-xl font-bold text-center">Order Received! 🇵🇭</div>}
+                           {orderStatus === "error" && <div className="w-full bg-red-500 text-white py-4 rounded-xl font-bold text-center">Error! Please Try Again.</div>}
+                       </div>
+                   </div>
+
+                   {/* Hero Section */}
+                   <header className="relative pt-32 pb-20 px-4 container mx-auto flex flex-col md:flex-row items-center gap-12 overflow-hidden">
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-red-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+
+                        <div className="flex-1 text-center md:text-left z-10 space-y-6">
+                             <div className="inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full font-bold text-sm tracking-wide">🇵🇭 MODERN FILIPINO CUISINE</div>
+                             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight">
+                                 Your New <span className="text-red-600">Paborito</span>
+                             </h1>
+                             <p className="text-xl text-gray-600 max-w-lg mx-auto md:mx-0">Experience the comfort of home-cooked Filipino classics with a modern twist.</p>
+                             <button onClick={() => document.getElementById('menu').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition flex items-center gap-2 mx-auto md:mx-0">
+                                 Order Now <ArrowRight size={20} />
+                             </button>
+                        </div>
+
+                        <div className="flex-1 relative w-full max-w-lg aspect-square">
+                             {slides.map((slide, idx) => (
+                                 <div key={idx} className={`absolute inset-0 transition-all duration-700 ease-in-out transform ${idx === activeSlide ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-90 rotate-6'}`}>
+                                     <div className="relative w-full h-full bg-white p-4 rounded-3xl shadow-2xl rotate-2">
+                                         <img src={slide.image} className="w-full h-full object-cover rounded-2xl" />
+                                         <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur px-4 py-2 rounded-lg shadow-lg">
+                                             <h3 className="font-bold">{slide.title}</h3>
+                                         </div>
+                                     </div>
+                                 </div>
+                             ))}
+                        </div>
+                   </header>
+
+                   {/* Menu Section */}
+                   <section id="menu" className="py-20 bg-white rounded-t-[3rem] shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.1)]">
